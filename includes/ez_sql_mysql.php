@@ -14,14 +14,7 @@
     
     global $ezsql_mysql_str;
 
-	$ezsql_mysql_str = array
-	(
-		1 => 'Require $dbuser and $dbpassword to connect to a database server',
-		2 => 'Error establishing mySQL database connection. Correct user/password? Correct hostname? Database server running?',
-		3 => 'Require $dbname to select a database',
-		4 => 'mySQL database connection is not active',
-		5 => 'Unexpected error while trying to select database'
-	);
+	$ezsql_mysql_str = [1 => 'Require $dbuser and $dbpassword to connect to a database server', 2 => 'Error establishing mySQL database connection. Correct user/password? Correct hostname? Database server running?', 3 => 'Require $dbname to select a database', 4 => 'mySQL database connection is not active', 5 => 'Unexpected error while trying to select database'];
 
 	/**********************************************************************
 	*  ezSQL Database specific class - mySQL
@@ -33,26 +26,16 @@
 	class ezSQL_mysql extends ezSQLcore
 	{
 
-		var $dbuser = false;
-		var $dbpassword = false;
-		var $dbname = false;
-		var $dbhost = false;
-		var $encoding = false;
-		var $rows_affected = false;
+		public $rows_affected = false;
 
 		/**********************************************************************
 		*  Constructor - allow the user to perform a quick connect at the
 		*  same time as initialising the ezSQL_mysql class
 		*/
 
-		function ezSQL_mysql($dbuser='', $dbpassword='', $dbname='', $dbhost='localhost', $encoding='')
-		{
-			$this->dbuser = $dbuser;
-			$this->dbpassword = $dbpassword;
-			$this->dbname = $dbname;
-			$this->dbhost = $dbhost;
-			$this->encoding = $encoding;
-		}
+		function __construct(public $dbuser='', public $dbpassword='', public $dbname='', public $dbhost='localhost', public $encoding='')
+  {
+  }
 
 		/**********************************************************************
 		*  Short hand way to connect to mySQL database server
@@ -62,7 +45,7 @@
 		function quick_connect($dbuser='', $dbpassword='', $dbname='', $dbhost='localhost', $encoding='')
 		{
 			$return_val = false;
-			if ( ! $this->connect($dbuser, $dbpassword, $dbhost,true) ) ;
+			if ( ! $this->connect($dbuser, $dbpassword, $dbhost) ) ;
 			else if ( ! $this->select($dbname,$encoding) ) ;
 			else $return_val = true;
 			return $return_val;
@@ -142,8 +125,8 @@
 				if ( $encoding == '') $encoding = $this->encoding;
 				if($encoding!='')
 				{
-					$encoding = strtolower(str_replace("-","",$encoding));
-					$charsets = array();
+					$encoding = strtolower(str_replace("-","",(string) $encoding));
+					$charsets = [];
 					$result = mysql_query("SHOW CHARACTER SET");
 					while($row = mysql_fetch_array($result,MYSQL_ASSOC))
 					{
@@ -174,7 +157,7 @@
 				$this->select($this->dbname, $this->encoding);
 			}
 
-			return mysql_real_escape_string(stripslashes($str));
+			return mysql_real_escape_string(stripslashes((string) $str));
 		}
 
 		/**********************************************************************
@@ -208,7 +191,7 @@
 			$this->flush();
 
 			// For reg expressions
-			$query = trim($query);
+			$query = trim((string) $query);
 
 			// Log how the function was called
 			$this->func_call = "\$db->query(\"$query\")";

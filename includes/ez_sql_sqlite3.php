@@ -14,10 +14,7 @@
 
 	global $ezsql_sqlite3_str;
 	
-	$ezsql_sqlite3_str = array
-	(
-		1 => 'Require $dbpath and $dbname to open an SQLite database'
-	);
+	$ezsql_sqlite3_str = [1 => 'Require $dbpath and $dbname to open an SQLite database'];
 
 	/**********************************************************************
 	*  ezSQL Database specific class - SQLite
@@ -29,14 +26,14 @@
 	class ezSQL_sqlite3 extends ezSQLcore
 	{
 
-		var $rows_affected = false;
+		public $rows_affected = false;
 
 		/**********************************************************************
 		*  Constructor - allow the user to perform a quick connect at the 
 		*  same time as initialising the ezSQL_sqlite3 class
 		*/
 
-		function ezSQL_sqlite3($dbpath='', $dbname='')
+		function __construct($dbpath='', $dbname='')
 		{
 			// Turn on track errors 
 			ini_set('track_errors',1);
@@ -53,7 +50,8 @@
 
 		function connect($dbpath='', $dbname='')
 		{
-			global $ezsql_sqlite3_str; $return_val = false;
+			$php_errormsg = null;
+   global $ezsql_sqlite3_str; $return_val = false;
 			
 			// Must have a user and a password
 			if ( ! $dbpath || ! $dbname )
@@ -104,7 +102,7 @@
 
 		function escape($str)
 		{
-			return $this->dbh->escapeString(stripslashes(preg_replace("/[\r\n]/",'',$str)));				
+			return $this->dbh->escapeString(stripslashes(preg_replace("/[\r\n]/",'',(string) $str)));				
 		}
 
 		/**********************************************************************
@@ -128,7 +126,7 @@
 		{
 
 			// For reg expressions
-			$query = str_replace("/[\n\r]/",'',trim($query)); 
+			$query = str_replace("/[\n\r]/",'',trim((string) $query)); 
 
 			// initialise return
 			$return_val = 0;
@@ -176,7 +174,7 @@
 				
 				// Take note of column info	
 				$i=0;
-				$this->col_info = array();
+				$this->col_info = [];
 				while ($i < @$this->result->numColumns())
 				{
 					$this->col_info[$i] = new StdClass;

@@ -10,7 +10,7 @@
  * @copyright Lex Brugman <lex_brugman@users.sourceforge.net>
  */
 
-$cfg = array();
+$cfg = [];
 
 $cfg['table_users'] = "users";
 $cfg['field_userid'] = "userid";

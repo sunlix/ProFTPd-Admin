@@ -27,33 +27,33 @@
 	class ezSQLcore
 	{
 
-		var $trace            = false;  // same as $debug_all
-		var $debug_all        = false;  // same as $trace
-		var $debug_called     = false;
-		var $vardump_called   = false;
-		var $show_errors      = true;
-		var $num_queries      = 0;
-		var $conn_queries     = 0;
-		var $last_query       = null;
-		var $last_error       = null;
-		var $col_info         = null;
-		var $captured_errors  = array();
-		var $cache_dir        = false;
-		var $cache_queries    = false;
-		var $cache_inserts    = false;
-		var $use_disk_cache   = false;
-		var $cache_timeout    = 24; // hours
-		var $timers           = array();
-		var $total_query_time = 0;
-		var $db_connect_time  = 0;
-		var $trace_log        = array();
-		var $use_trace_log    = false;
-		var $sql_log_file     = false;
-		var $do_profile       = false;
-		var $profile_times    = array();
+		public $trace            = false;  // same as $debug_all
+		public $debug_all        = false;  // same as $trace
+		public $debug_called     = false;
+		public $vardump_called   = false;
+		public $show_errors      = true;
+		public $num_queries      = 0;
+		public $conn_queries     = 0;
+		public $last_query       = null;
+		public $last_error       = null;
+		public $col_info         = null;
+		public $captured_errors  = [];
+		public $cache_dir        = false;
+		public $cache_queries    = false;
+		public $cache_inserts    = false;
+		public $use_disk_cache   = false;
+		public $cache_timeout    = 24; // hours
+		public $timers           = [];
+		public $total_query_time = 0;
+		public $db_connect_time  = 0;
+		public $trace_log        = [];
+		public $use_trace_log    = false;
+		public $sql_log_file     = false;
+		public $do_profile       = false;
+		public $profile_times    = [];
 
 		// == TJH == default now needed for echo of debug function
-		var $debug_echo_is_on = true;
+		public $debug_echo_is_on = true;
 
 		/**********************************************************************
 		*  Constructor
@@ -71,11 +71,11 @@
 		function get_host_port( $host, $default = false )
 		{
 			$port = $default;
-			if ( false !== strpos( $host, ':' ) ) {
-				list( $host, $port ) = explode( ':', $host );
+			if ( str_contains( (string) $host, ':' ) ) {
+				[$host, $port] = explode( ':', (string) $host );
 				$port = (int) $port;
 			}
-			return array( $host, $port );
+			return [$host, $port];
 		}
 
 		/**********************************************************************
@@ -88,11 +88,7 @@
 			$this->last_error = $err_str;
 
 			// Capture all errors to an error array no matter what happens
-			$this->captured_errors[] = array
-			(
-				'error_str' => $err_str,
-				'query'     => $this->last_query
-			);
+			$this->captured_errors[] = ['error_str' => $err_str, 'query'     => $this->last_query];
 		}
 
 		/**********************************************************************
@@ -129,7 +125,8 @@
 		function get_var($query=null,$x=0,$y=0)
 		{
 
-			// Log how the function was called
+			$values = [];
+   // Log how the function was called
 			$this->func_call = "\$db->get_var(\"$query\",$x,$y)";
 
 			// If there is a query then perform it if not then use cached results..
@@ -167,7 +164,7 @@
 			// If the output is an object then return object using the row offset..
 			if ( $output == OBJECT )
 			{
-				return $this->last_result[$y]?$this->last_result[$y]:null;
+				return $this->last_result[$y] ?: null;
 			}
 			// If the output is an associative array then return row as such..
 			elseif ( $output == ARRAY_A )
@@ -195,7 +192,7 @@
 		function get_col($query=null,$x=0)
 		{
 
-			$new_array = array();
+			$new_array = [];
 
 			// If there is a query then perform it if not then use cached results..
 			if ( $query )
@@ -204,7 +201,7 @@
 			}
 
 			// Extract the column values
-			$j = count($this->last_result);
+			$j = is_countable($this->last_result) ? count($this->last_result) : 0;
 			for ( $i=0; $i < $j; $i++ )
 			{
 				$new_array[$i] = $this->get_var(null,$x,$i);
@@ -221,7 +218,8 @@
 		function get_results($query=null, $output = OBJECT)
 		{
 
-			// Log how the function was called
+			$new_array = [];
+   // Log how the function was called
 			$this->func_call = "\$db->get_results(\"$query\", $output)";
 
 			// If there is a query then perform it if not then use cached results..
@@ -257,7 +255,7 @@
 				}
 				else
 				{
-					return array();
+					return [];
 				}
 			}
 		}
@@ -271,7 +269,8 @@
 		function get_col_info($info_type="name",$col_offset=-1)
 		{
 
-			if ( $this->col_info )
+			$new_array = [];
+   if ( $this->col_info )
 			{
 				if ( $col_offset == -1 )
 				{
@@ -300,7 +299,7 @@
 		{
 
 			// The would be cache file for this query
-			$cache_file = $this->cache_dir.'/'.md5($query);
+			$cache_file = $this->cache_dir.'/'.md5((string) $query);
 
 			// disk caching of queries
 			if ( $this->use_disk_cache && ( $this->cache_queries && ! $is_insert ) || ( $this->cache_inserts && $is_insert ))
@@ -313,13 +312,7 @@
 				else
 				{
 					// Cache all result values
-					$result_cache = array
-					(
-						'col_info' => $this->col_info,
-						'last_result' => $this->last_result,
-						'num_rows' => $this->num_rows,
-						'return_value' => $this->num_rows,
-					);
+					$result_cache = ['col_info' => $this->col_info, 'last_result' => $this->last_result, 'num_rows' => $this->num_rows, 'return_value' => $this->num_rows];
 					file_put_contents($cache_file, serialize($result_cache));
 					if( file_exists($cache_file . ".updating") )
 						unlink($cache_file . ".updating");
@@ -336,7 +329,7 @@
 		{
 
 			// The would be cache file for this query
-			$cache_file = $this->cache_dir.'/'.md5($query);
+			$cache_file = $this->cache_dir.'/'.md5((string) $query);
 
 			// Try to get previously cached version
 			if ( $this->use_disk_cache && file_exists($cache_file) )
@@ -386,11 +379,11 @@
 			}
 
 			$var_type = gettype ($mixed);
-			print_r(($mixed?$mixed:"<font color=red>No Value / False</font>"));
+			print_r(($mixed ?: "<font color=red>No Value / False</font>"));
 			echo "\n\n<b>Type:</b> " . ucfirst($var_type) . "\n";
-			echo "<b>Last Query</b> [$this->num_queries]<b>:</b> ".($this->last_query?$this->last_query:"NULL")."\n";
-			echo "<b>Last Function Call:</b> " . ($this->func_call?$this->func_call:"None")."\n";
-			echo "<b>Last Rows Returned:</b> ".count($this->last_result)."\n";
+			echo "<b>Last Query</b> [$this->num_queries]<b>:</b> ".($this->last_query ?: "NULL")."\n";
+			echo "<b>Last Function Call:</b> " . ($this->func_call ?: "None")."\n";
+			echo "<b>Last Rows Returned:</b> ".(is_countable($this->last_result) ? count($this->last_result) : 0)."\n";
 			echo "</font></pre></font></blockquote></td></tr></table>".$this->donation();
 			echo "\n<hr size=1 noshade color=dddddd>";
 
@@ -465,7 +458,7 @@
 				echo "<tr bgcolor=eeeeee><td nowrap valign=bottom><font color=555599 face=arial size=2><b>(row)</b></font></td>";
 
 
-				for ( $i=0, $j=count($this->col_info); $i < $j; $i++ )
+				for ( $i=0, $j=is_countable($this->col_info) ? count($this->col_info) : 0; $i < $j; $i++ )
 				{
 					/* when selecting count(*) the maxlengh is not set, size is set instead. */
 					echo "<td nowrap align=left valign=top><font size=1 color=555599 face=arial>{$this->col_info[$i]->type}";
@@ -503,7 +496,7 @@
 			} // if last result
 			else
 			{
-				echo "<tr bgcolor=ffffff><td colspan=".(count($this->col_info)+1)."><font face=arial size=2>No Results</font></td></tr>";
+				echo "<tr bgcolor=ffffff><td colspan=".((is_countable($this->col_info) ? count($this->col_info) : 0)+1)."><font face=arial size=2>No Results</font></td></tr>";
 			}
 
 			echo "</table>";
@@ -547,7 +540,7 @@
 
 		function timer_get_cur()
 		{
-			list($usec, $sec) = explode(" ",microtime());
+			[$usec, $sec] = explode(" ",microtime());
 			return ((float)$usec + (float)$sec);
 		}
 
@@ -565,11 +558,7 @@
 		{
 			if ( $this->do_profile )
 			{
-				$this->profile_times[] = array
-				(
-					'query' => $this->last_query,
-					'time' => $this->timer_elapsed($timer_name)
-				);
+				$this->profile_times[] = ['query' => $this->last_query, 'time' => $this->timer_elapsed($timer_name)];
 			}
 
 			$this->total_query_time += $this->timer_elapsed($timer_name);
@@ -600,7 +589,7 @@
 				$this->register_error( 'get_set() parameter invalid. Expected array in '.__FILE__.' on line '.__LINE__);
 				return;
 			}
-			$sql = array();
+			$sql = [];
 			foreach ( $params as $field => $val )
 			{
 				if ( $val === 'true' || $val === true )
@@ -608,14 +597,10 @@
 				if ( $val === 'false' || $val === false )
 					$val = 0;
 
-				switch( $val ){
-					case 'NOW()' :
-					case 'NULL' :
-					  $sql[] = "$field = $val";
-						break;
-					default :
-						$sql[] = "$field = '".$this->escape( $val )."'";
-				}
+				$sql[] = match ($val) {
+        'NOW()', 'NULL' => "$field = $val",
+        default => "$field = '".$this->escape( $val )."'",
+    };
 			}
 
 			return implode( ', ' , $sql );

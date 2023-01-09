@@ -44,34 +44,28 @@ class AdminClass {
      * database layer
      * @var ezSQLcore (ezSQL_mysql or ezSQL_sqlite3)
      */
-    var $dbConn = false;
-    /**
-     * configuration store
-     * @var Array
-     */
-    var $config = false;
+    public $dbConn = false;
     /**
      * version number
      * @access private
      * @var String
      */
-    var $version = "2.2";
+    public $version = "2.2";
 
     /**
      * initialize the database connection via ezSQL_mysql
-     * @param Array $cfg configuration array retrieved from config.php to store in the object
+     * @param Array $config configuration array retrieved from config.php to store in the object
      */
-    function AdminClass($cfg) {
-        $this->config = $cfg;
+    function __construct(public $config) {
         // if db_type is not set, default to mysqli
-        if (!isset($cfg['db_type']) || $cfg['db_type'] == "mysqli") {
+        if (!isset($config['db_type']) || $config['db_type'] == "mysqli") {
             $this->dbConn = new ezSQL_mysqli($this->config['db_user'], $this->config['db_pass'], $this->config['db_name'], $this->config['db_host']);
-        } elseif ($cfg['db_type'] == "mysql") {
+        } elseif ($config['db_type'] == "mysql") {
             $this->dbConn = new ezSQL_mysql($this->config['db_user'], $this->config['db_pass'], $this->config['db_name'], $this->config['db_host']);
-        } elseif ($cfg['db_type'] == "sqlite3") {
+        } elseif ($config['db_type'] == "sqlite3") {
             $this->dbConn = new ezSQL_sqlite3($this->config['db_path'], $this->config['db_name']);
         } else {
-            trigger_error('Unsupported database type: "'.$cfg['db_type'].'"', E_USER_WARNING);
+            trigger_error('Unsupported database type: "'.$config['db_type'].'"', E_USER_WARNING);
         }
     }
 
@@ -91,15 +85,15 @@ class AdminClass {
         $format = 'SELECT * FROM %s';
         $query = sprintf($format, $this->config['table_groups']);
         $result = $this->dbConn->get_results($query);
-        $data = array();
+        $data = [];
         if ($result) {
             $field_groupname = $this->config['field_groupname'];
             $field_gid = $this->config['field_gid'];
             $field_members = $this->config['field_members'];
             foreach ($result as $group) {
-                $names = explode(",", $group->$field_members);
+                $names = explode(",", (string) $group->$field_members);
                 reset($names);
-                while (list($key, $name) = each($names)) {
+                foreach ($names as $key => $name) {
                     $data[$name][$group->$field_gid] = $group->$field_groupname;
                 }
             }
@@ -109,7 +103,7 @@ class AdminClass {
         /* if there is data for provided userid, return only that */
         if (array_key_exists($userid, $data)) return $data[$userid];
         /* return nothing otherwise */
-        return array();
+        return [];
     }
 
     /**
@@ -120,7 +114,7 @@ class AdminClass {
         $format = 'SELECT * FROM %s ORDER BY %s ASC';
         $query = sprintf($format, $this->config['table_groups'], $this->config['field_gid']);
         $result = $this->dbConn->get_results($query);
-        $data = array();
+        $data = [];
         if ($result) {
             $field_gid = $this->config['field_gid'];
             $field_groupname = $this->config['field_groupname'];
@@ -296,13 +290,13 @@ class AdminClass {
         $passwd_encryption = $this->config['passwd_encryption'];
         $passwd = "";
         if ($passwd_encryption == 'pbkdf2') {
-          $passwd = hash_pbkdf2("sha1", $userdata[$field_passwd], $userdata[$field_userid], 5000, 40);
+          $passwd = hash_pbkdf2("sha1", (string) $userdata[$field_passwd], (string) $userdata[$field_userid], 5000, 40);
           $passwd = '"'.$passwd.'"';
         } else if ($passwd_encryption == 'crypt') {
           $passwd = unix_crypt($userdata[$field_passwd]);
           $passwd = '"'.$passwd.'"';
-        } else if (strpos($passwd_encryption, "OpenSSL:") === 0) {
-          $passwd_digest = substr($passwd_encryption, strpos($passwd_encryption, ':')+1);
+        } else if (str_starts_with((string) $passwd_encryption, "OpenSSL:")) {
+          $passwd_digest = substr((string) $passwd_encryption, strpos((string) $passwd_encryption, ':')+1);
           $passwd = 'CONCAT("{'.$passwd_digest.'}",TO_BASE64(UNHEX('.$passwd_digest.'("'.$userdata[$field_passwd].'"))))';
         } else {
           $passwd = $passwd_encryption.'("'.$userdata[$field_passwd].'")';
@@ -398,7 +392,7 @@ class AdminClass {
         $field_userid = $this->config['field_userid'];
         $field_members = $this->config['field_members'];
 
-        $data = array();
+        $data = [];
         foreach ($result as $user) {
             $data[$user->$field_id] = $user->$field_userid;
         }
@@ -435,8 +429,8 @@ class AdminClass {
         $field_userid = $this->config['field_userid'];
         $field_members = $this->config['field_members'];
 
-        $userids = explode(",", $group[$field_members]);
-        $data = array();
+        $userids = explode(",", (string) $group[$field_members]);
+        $data = [];
         foreach ($userids as $userid) {
             $user = $this->get_user_by_userid($userid);
             if (!$user) continue;
@@ -461,8 +455,8 @@ class AdminClass {
         $field_userid = $this->config['field_userid'];
         $field_members = $this->config['field_members'];
 
-        $userids = explode(",", $group[$field_members]);
-        $data = array();
+        $userids = explode(",", (string) $group[$field_members]);
+        $data = [];
         foreach ($userids as $userid) {
             $user = $this->get_user_by_userid($userid);
             if (!$user) continue;
@@ -483,7 +477,7 @@ class AdminClass {
         $query = sprintf($format, $this->config['field_members'], $this->config['table_groups'], $this->config['field_gid'], $gid);
         $result = $this->dbConn->get_var($query);
         if ($result != "") {
-            if(strpos($result, $userid) !== false) {
+            if(str_contains((string) $result, $userid)) {
                 return true;
             } else {
                 $members = $result.','.$userid;
@@ -510,11 +504,11 @@ class AdminClass {
         $format = 'SELECT %s FROM %s WHERE %s="%s"';
         $query = sprintf($format, $this->config['field_members'], $this->config['table_groups'], $this->config['field_gid'], $gid);
         $result = $this->dbConn->get_var($query);
-        if(strpos($result, $userid) === false) {
+        if(!str_contains((string) $result, $userid)) {
             return true;
         }
-        $members_array = explode(",", $result);
-        $members_new_array = array_diff($members_array, array("$userid", ""));
+        $members_array = explode(",", (string) $result);
+        $members_new_array = array_diff($members_array, ["$userid", ""]);
         if (is_array($members_new_array)) {
             $members_new = implode(",", $members_new_array);
         } else {
@@ -579,16 +573,16 @@ class AdminClass {
         $passwd_encryption = $this->config['passwd_encryption'];
 
         $passwd_query = '';
-        if (strlen($userdata[$field_passwd]) > 0) {
+        if (strlen((string) $userdata[$field_passwd]) > 0) {
           $passwd_format = '';
           if ($passwd_encryption == 'pbkdf2') {
-            $passwd = hash_pbkdf2("sha1", $userdata[$field_passwd], $userdata[$field_userid], 5000, 40);
+            $passwd = hash_pbkdf2("sha1", (string) $userdata[$field_passwd], (string) $userdata[$field_userid], 5000, 40);
             $passwd_format = ' %s="%s", ';
           } else if ($passwd_encryption == 'crypt') {
             $passwd = unix_crypt($userdata[$field_passwd]);
             $passwd_format = ' %s="%s", ';
-          } else if (strpos($passwd_encryption, "OpenSSL:") === 0) {
-            $passwd_digest = substr($passwd_encryption, strpos($passwd_encryption, ':')+1);
+          } else if (str_starts_with((string) $passwd_encryption, "OpenSSL:")) {
+            $passwd_digest = substr((string) $passwd_encryption, strpos((string) $passwd_encryption, ':')+1);
             $passwd = 'CONCAT("{'.$passwd_digest.'}",TO_BASE64(UNHEX('.$passwd_digest.'("'.$userdata[$field_passwd].'"))))';
             $passwd_format = ' %s=%s, ';
           } else {
@@ -640,7 +634,7 @@ class AdminClass {
         $charactersLength = strlen($characters);
         $randomString = '';
         for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
         }
         return $randomString;
     }

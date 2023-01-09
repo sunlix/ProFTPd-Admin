@@ -38,14 +38,14 @@ function hash_pbkdf2($algo, $password, $salt, $iterations, $length = 0, $raw_out
         return false;
     }
 
-    $salt_len = strlen($salt);
+    $salt_len = strlen((string) $salt);
     if ($salt_len > PHP_INT_MAX - 4) {
         trigger_error(sprintf('Supplied salt is too long, max of PHP_INT_MAX - 4 bytes: %d supplied', $salt_len), E_USER_WARNING);
         return false;
     }
 
     // Algorithm implementation
-    $hash_len = strlen(hash($algo, null, true));
+    $hash_len = strlen(hash((string) $algo, '', true));
     if ($length == 0) {
         $length = $hash_len;
     }
@@ -53,9 +53,9 @@ function hash_pbkdf2($algo, $password, $salt, $iterations, $length = 0, $raw_out
     $output = '';
     $block_count = ceil($length / $hash_len);
     for ($block = 1; $block <= $block_count; ++$block) {
-        $key1 = $key2 = hash_hmac($algo, $salt . pack('N', $block), $password, true);
+        $key1 = $key2 = hash_hmac((string) $algo, $salt . pack('N', $block), (string) $password, true);
         for ($iteration = 1; $iteration < $iterations; ++$iteration) {
-            $key2 ^= $key1 = hash_hmac($algo, $key1, $password, true);
+            $key2 ^= $key1 = hash_hmac((string) $algo, $key1, (string) $password, true);
         }
         $output .= $key2;
     }

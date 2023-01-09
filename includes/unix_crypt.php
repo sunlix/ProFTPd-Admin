@@ -25,28 +25,28 @@ function unix_crypt($password) {
     case "MD5":
       $salt = '$1$';
       for ($i = 0; $i < 8; $i++)
-        $salt .= $chars[mt_rand(0, strlen($chars) - 1)];
+        $salt .= $chars[random_int(0, strlen($chars) - 1)];
       $salt .= '$';
       break;
     case "SHA256":
       $salt = '$5$';
-      $len = mt_rand(8, 16);
+      $len = random_int(8, 16);
       for ($i = 0; $i < $len; $i++)
-        $salt .= $chars[mt_rand(0, strlen($chars) - 1)];
+        $salt .= $chars[random_int(0, strlen($chars) - 1)];
       $salt .= '$';
       break;
     case "SHA512":
       $salt = '$6$';
-      $len = mt_rand(8, 16);
+      $len = random_int(8, 16);
       for ($i = 0; $i < $len; $i++)
-        $salt .= $chars[mt_rand(0, strlen($chars) - 1)];
+        $salt .= $chars[random_int(0, strlen($chars) - 1)];
       $salt .= '$';
       break;
     default:
       for ($i = 0; $i < 2; $i++)
-        $salt .= $chars[mt_rand(0, strlen($chars) - 1)];
+        $salt .= $chars[random_int(0, strlen($chars) - 1)];
       break;
   }
 
-  return crypt($password, $salt);
+  return crypt((string) $password, $salt);
 }
